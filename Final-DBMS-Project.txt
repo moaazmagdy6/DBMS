@@ -1,0 +1,753 @@
+#!/bin/bash
+
+#DBMS Program Project that make DataBase Management System Functions
+#Team (No.5):-
+# 1. Khaled Rakha
+# 2. Moaaz Magdy
+# 3. Omaima Ismail
+# 4. Riham Abdul Maguid
+# 5. Rogina Badr
+
+clear
+
+#First Function: Create New DataBase
+Create_DB()
+{
+ loop=1
+ while [ $loop -eq 1 ]
+ do
+   echo "Please enter new DataBase name: "
+   read dbName
+
+   if [ -d $dbName ]
+   then 
+       echo "	Sorry, DataBase ($dbName) already exists, please try again	"
+       echo " ================================================================= "
+       Create_DB
+   else  
+       mkdir $dbName
+       echo "	DataBase ($dbName) Created Sucessfully	"
+       echo " ========================================= "
+          
+       echo "Do you want to create new DataBase? (y/n)"
+       read ch
+       if [ $ch = 'y' ]
+       then
+           loop=1
+           echo " ======================================= "
+       elif [ $ch = 'n' ]
+       then  
+           loop=0
+           echo " ========================================= "
+       else
+           echo "	Sorry you entered wrong input, please enter (y/n)	"
+           echo "Note:: This is your last try"
+           echo "Do you want to create new DataBase? (y/n)"
+           read ch
+           if [ $ch = 'y' ]
+           then
+               loop=1
+               echo " ======================================= "
+           else  
+               loop=0
+               echo " ========================================= "
+           fi
+        fi
+    fi
+ done
+}
+
+
+#Second Function: Create New Table in specific DataBase
+Create_Table()
+{
+  echo "Please enter existing DataBase name: "
+  read dbName
+  if [ -d $dbName ]
+  then
+     loop=1
+     while [ $loop -eq 1 ]
+     do    
+       echo "List of tables in this DataBase ($dbName): "
+       ls $dbName
+       echo " ========================================= "
+       echo "Please enter new Table Name: "
+       read tableName
+       if [ -f $dbName/$tableName ]
+       then
+           echo "	Sorry, Table ($tableName) already exists in DataBase ($dbName), please try again		"
+           echo " ============================================================================================= "
+           Create_Table
+       else
+            touch $dbName/$tableName
+            echo "	Table ($tableName) Created Sucessfully in DataBase ($dbName)	"
+            echo " ==================================================================== "
+            echo "Please enter number of Columns needed rather than PK: "
+            read colNum
+          
+            #Check if input number is positive integer
+            numCheck=1
+            while [ $numCheck -eq 1 ]
+            do
+              if [[ $colNum -eq $colNum && $colNum -gt 0 ]] 2> /dev/null
+              then
+                  numCheck=0
+              else
+                  echo "	Sorry you entered wrong input, please enter valid number	"
+	          read colNum
+              fi 
+            done
+
+            #Append first line of columns' names in table file
+            echo -n "PK, " >> $dbName/$tableName
+            for i in $(seq $colNum)
+            do
+              echo "Please enter the name of Column number $i: "
+              read colName
+              echo -n "$colName, " >> $dbName/$tableName
+            done
+            echo >> $dbName/$tableName #go to new line in the file
+            echo "	Columns of Table ($tableName) defined sucessfully	"
+            echo " ============================================================ "
+          
+            echo "Do you want to create new Table in same DataBase ($dbName)? (y/n)"
+            read ch
+            if [ $ch = 'y' ]
+            then
+                loop=1
+                echo " =============================================================== "
+            elif [ $ch = 'n' ]
+            then  
+               loop=0
+               echo " ==================================================================== "
+            else
+               echo "	Sorry you entered wrong input, please enter (y/n)	"
+               echo "Note:: This is your last try"
+               echo "Do you want to create new Table in same DataBase ($dbName)? (y/n)"
+               read ch
+               if [ $ch = 'y' ]
+               then
+                  loop=1
+                  echo " =============================================================== "
+               else  
+                  loop=0
+                  echo " ==================================================================== "
+               fi
+            fi
+         fi
+       done
+  else
+      echo "	Sorry, DataBase ($dbName) doesn't exist, please try again	"
+      echo " ================================================================== "
+      Create_Table
+  fi
+}
+
+
+#Third Function: Insert Records in specific Table
+Insert()
+{
+  echo "Please enter existing DataBase name: "
+  read dbName
+  if [ -d $dbName ]
+  then
+      echo "List of tables in this DataBase ($dbName): "
+      ls $dbName
+      echo " ========================================= "
+      echo "Please enter existing Table Name: "
+      read tableName
+      if [ -f $dbName/$tableName ]
+      then
+        loop=1
+        while [ $loop -eq 1 ]
+        do    
+          pk=$(tail -1 $dbName/$tableName | cut -d"," -f 1) #get least PK
+          if [ $pk = "PK" ] #check if this is first data row
+          then
+             pk=1
+          else
+             pk=$(($pk + 1)) #increment PK by 1
+          fi
+         
+          echo -n "$pk, " >> $dbName/$tableName #add the new PK in file
+          colNum=$((`awk -F", " 'NR==1 {print NF}' $dbName/$tableName `-1)) #get number of columns in the table
+
+          #insert values of the row
+          for i in $(seq 2 $colNum)
+          do
+	    colName=`head -1 $dbName/$tableName | cut -d"," -f $i` #get each column name
+            echo "Please enter value of ($colName ) Column: "
+            read value
+            echo -n "$value, " >> $dbName/$tableName
+          done
+          echo >> $dbName/$tableName #go to new line in the file
+          
+          echo "	Record Inserted Sucessfully in Table ($tableName)	"
+          echo " ============================================================== "
+          echo "Do you want to insert new record in same Table ($tableName)? (y/n)"
+          read ch
+          if [ $ch = 'y' ]
+          then
+              loop=1
+              echo " ================================================================ "
+          elif [ $ch = 'n' ] 
+          then  
+            loop=0
+            echo " ============================================================== "
+          else
+             echo "	Sorry you entered wrong input, please enter (y/n)	"
+             echo "Note:: This is your last try"
+             echo "Do you want to insert new record in same Table ($tableName)? (y/n)"
+             read ch
+             if [ $ch = 'y' ]
+             then
+                loop=1
+                echo " ================================================================ "
+             else  
+                loop=0
+                echo " ============================================================== "
+             fi
+          fi
+        done
+
+      else
+          echo "	Sorry, Table ($tableName) doesn't exist in DataBase ($dbName), please try again	"
+          echo " ====================================================================================== "
+          Insert
+      fi
+  else
+      echo "	Sorry, Database ($dbName) doesn't exist, please try again	"
+      echo " ================================================================== "
+      Insert
+  fi
+}
+
+
+#Fourth Function: Update specific feild value of specific row in specific Table
+Update()
+{
+  echo "Please enter existing DataBase name: "
+  read dbName
+  if [ -d $dbName ]
+  then
+     echo "List of tables in this DataBase ($dbName): "
+     ls $dbName
+     echo " ========================================= "
+     echo "Please enter existing Table Name: "
+     read tableName
+     if [ -f $dbName/$tableName ]
+     then
+        echo "|__________________________# $tableName Data #_________________________|"
+        cat $dbName/$tableName
+        echo " ====================================================================== "
+
+        loop=1
+        while [ $loop -eq 1 ]
+        do    
+          echo "Please enter the primary key of record you want to update: "
+          read prkey
+           
+          #Check if input number is positive integer
+          numCheck=1
+          while [ $numCheck -eq 1 ]
+          do
+            if [[ $prkey -eq $prkey && $prkey -gt 0 ]] 2> /dev/null
+            then
+                numCheck=0
+            else
+                echo "	Sorry you entered wrong input, please enter valid number	"
+                read prkey
+            fi 
+          done
+          
+          prcheck=$(cut -d "," -f 1 $dbName/$tableName | grep $prkey) #get the entered PK from the PK column
+ 
+          if [[ ! $prcheck ]] #check if entered PK exists in table
+          then
+              echo "	Sorry this primary key ($prkey) doesn't exist in Table ($tableName)	"
+              echo " ========================================================================== "
+          else
+              echo "Please enter the column number that you want to update its value"
+              read i
+              
+              #Check if input number is positive integer
+              numCheck=1
+              while [ $numCheck -eq 1 ]
+              do
+                if [[ $i -eq $i && $i -gt 0 ]] 2> /dev/null
+                then
+                    if [ $i -eq 1 ]
+                    then
+                      echo "	Sorry you can't change PK record value, please enter another column number	"
+                      read i
+                    else
+                      numCheck=0
+                    fi
+                else
+                    echo "	Sorry you entered wrong input, please enter valid number	"
+                    read i
+                fi 
+              done
+
+              value=$(awk -F"," '$1=='$prkey' {print $'$i'}' $dbName/$tableName) #get the old value in the specified cell in the row
+              if [[ $value ]] 
+              then
+                 echo "Note that the old value you want to change is: $value"
+                 echo "Please enter the new value:"
+                 read newvalue
+                 prkey=$(($prkey + 1)) #increment the entered PK by 1 becuase of the header line in the file
+	         sed -i "${prkey}s/$value/ $newvalue/" $dbName/$tableName #substitute the old value with new value in the specified cell in the row
+                 echo "	Record Updated Sucessfully in Table ($tableName)	"
+                 echo " ======================================================= "
+                 
+                 echo "Do you want to update another record in same Table ($tableName)? (y/n)"
+                 read ch
+                 if [ $ch = 'y' ]
+                 then
+                    loop=1
+                    echo " ==================================================================== "
+                 elif [ $ch = 'n' ] 
+                 then  
+                    loop=0
+                    echo " ======================================================= "
+                 else
+                    echo "	Sorry you entered wrong input, please enter (y/n)	"
+                    echo "Note:: This is your last try"
+                    echo "Do you want update another record in same Table ($tableName)? (y/n)"
+                    read ch
+                    if [ $ch = 'y' ]
+                    then
+                       loop=1
+                       echo " ==================================================================== "
+                    else  
+                       loop=0
+                       echo " ======================================================= "
+                    fi
+                 fi
+              else
+                 echo "	Sorry, the column number you entered doesn't exist in Table ($tableName)	"
+                 echo " =============================================================================== "
+              fi
+          fi
+        done
+     else
+        echo "	Sorry, Table ($tableName) dosen't exist in DataBase ($dbName), please try again	"
+        echo " ================================================================================ "
+        Update
+     fi
+  else
+     echo "	Sorry, Database ($dbName) doesn't exist, please try again	"
+     echo " =================================================================== "
+     Update
+  fi 
+}
+
+
+#Fifth Function: Select and display specific all data, column, or row from specific Table
+Select()
+{
+  echo "Please enter existing DataBase name: "
+  read dbName
+  if [ -d $dbName ]
+  then
+     echo "List of tables in this DataBase ($dbName): "
+     ls $dbName
+     echo " ========================================= "
+
+     while [ true ]
+     do
+       echo " 1. Select Table"
+       echo " 2. Select Column"
+       echo " 3. Select Row"
+       echo " 4. Exit" 
+       echo "Please choose operation number: "
+       read operation
+       # set operation list
+       case $operation in
+                     1)
+                       echo "Please enter existing Table Name: "
+                       read tableName
+                       if [ -f $dbName/$tableName ]
+                       then
+                           echo "|____________________# Table ($tableName) Data #_______________________|"
+                           cat $dbName/$tableName
+                           echo " ====================================================================== "
+                       else
+                          echo "	Sorry, Table ($tableName) doesn't exist in DataBase ($dbName), please try again	"
+                          echo " ====================================================================================== "
+                          Select
+                        fi                        
+                        ;;
+                     2)
+                       echo "Please enter existing Table Name: "
+                       read tableName
+                       if [ -f $dbName/$tableName ]
+                       then
+                           cat  $dbName/$tableName | head -1
+                           echo " ===================================================== "
+                           num=$((`awk -F", " 'NR==1 {print NF}' $dbName/$tableName `-1))
+                           echo "Please enter the column number that you want to select "
+                           read colNum
+                           if [ $colNum -le $num ]
+                           then
+                               cat  $dbName/$tableName | awk '{print $'$colNum'}'
+                               echo " ===================================================== "
+                           else
+                               echo " Column number not found "
+                               echo " ======================= "
+                           fi
+                       else
+                           echo "	Sorry, Table ($tableName) doesn't exist in DataBase ($dbName), please try again	"
+                           echo " ===================================================================================== "
+                           Select
+                       fi
+                       ;;
+                    3)
+                      echo "Please enter existing Table Name: "
+                      read tableName
+                      if [ -f $dbName/$tableName ]
+                      then
+                          echo "|____________________# Table ($tableName) Data #_______________________|"
+                          cat $dbName/$tableName
+                          echo " ====================================================================== "
+ 
+                          echo "Please enter your query or the word you want to select its row"
+                          read query
+                          grep -w $query $dbName/$tableName
+                          if [ $? -eq 0 ]
+                          then 
+                              echo "OK, $query is found in DataBase ($dbName)"
+                              echo " ======================================= "
+                          else 
+			      echo "$query is not found in DataBase ($dbName)" 
+                              echo " ======================================= "
+                          fi
+                      else
+                          echo "	Sorry, Table ($tableName) doesn't exist in DataBase ($dbName), please try again	"
+                          echo " ====================================================================================== "
+                          Select
+                       fi
+                       ;;
+                    4)
+                       echo "Exit"
+                       echo " ================================================================== "
+                       break
+                       ;;
+                    *)
+                       echo "	Sorry you entered wrong choice, please try again	"
+                       ;;
+           esac
+        done
+  else
+      echo "	Sorry, Database ($dbName) doesn't exist, please try again	"
+      echo " ================================================================== "
+      Select
+ fi
+}
+
+
+#Sixth Function: Display all data in specific Table
+Display_Table()
+{
+  echo "Please enter DataBase name: "
+  read dbName
+  if [ -d $dbName ]
+  then
+     echo "List of tables in this DataBase ($dbName): "
+     ls $dbName
+     echo " ========================================= "
+     loop=1
+     while [ $loop -eq 1 ]
+     do    
+       echo "Please enter Table Name: "
+       read tableName
+       if [ -f $dbName/$tableName ]
+       then
+          echo "|____________________# Table ($tableName) Data #_______________________|"
+          cat $dbName/$tableName
+          echo " ====================================================================== "
+          
+          echo "Do you want to display another Table in same DataBase ($dbName)? (y/n)"
+          read ch
+          if [ $ch = 'y' ]
+          then
+              loop=1
+              echo " ==================================================================== "
+              elif [ $ch = 'n' ] 
+              then  
+                  loop=0
+                  echo " ========================================================================= "
+              else
+                  echo "	Sorry you entered wrong input, please enter (y/n)	"
+                  echo "Note:: This is your last try"
+                  echo "Do you want display another Table? (y/n)"
+                  read ch
+                  if [ $ch = 'y' ]
+                  then
+                     loop=1
+                     echo " ==================================================================== "
+                  else  
+                     loop=0
+                     echo " ========================================================================= "
+                  fi
+              fi
+     else
+        echo "	Sorry, Table ($tableName) dosen't exist in DataBase ($dbName), please try again	"
+        echo " ================================================================================ "
+        Display_Table
+     fi
+  done
+  else
+     echo "	Sorry, Database ($dbName) doesn't exist, please try again	"
+     echo " =================================================================== "
+     Display_Table
+  fi
+}
+
+
+#Seventh Function: Delete specific row from specific Table
+Delete_Record ()
+{
+  echo "Please enter DataBase name: "
+  read dbName
+  if [ -d $dbName ]
+  then
+      echo "List of tables in this DataBase ($dbName): "
+      ls $dbName
+      echo " ========================================= "
+      echo "Please enter Table Name: "
+      read tableName
+      if [ -f $dbName/$tableName ]
+      then
+         echo "|_____________________# Table ($tableName) Data #______________________|"
+         cat $dbName/$tableName
+         echo " ====================================================================== "
+         loop=1
+         while [ $loop -eq 1 ]
+         do    
+           echo "Please enter the primary key of record you want to delete: "
+           read pk
+           pk=$(($pk + 1)) #increment the entered PK by 1 becuase of the header line in the file
+           sed -i "${pk}d" $dbName/$tableName #delete the selected record
+           echo "	Record Deleted Sucessfully from Table ($tableName)	"
+           echo " ============================================================= "
+
+           echo "Do you want to delete another record from same Table ($tableName)? (y/n)"
+           read ch
+           if [ $ch = 'y' ]
+           then
+               loop=1
+               echo " ====================================================================== "
+          elif [ $ch = 'n' ] 
+          then  
+            loop=0
+           echo " ============================================================= "
+          else
+             echo "	Sorry you entered wrong input, please enter (y/n)	"
+             echo "Note:: This is your last try"
+             echo "Do you want to delete another record in same Table ($tableName)? (y/n)"
+             read ch
+             if [ $ch = 'y' ]
+             then
+                loop=1
+                echo " ====================================================================== "
+             else  
+                loop=0
+                echo " ============================================================== "
+             fi
+          fi
+        done
+      else
+        echo "	Sorry, Table ($tableName) dosen't exist in DataBase ($dbName), please try again	"
+        echo " ================================================================================ "
+        Delete_Record
+      fi
+  else
+     echo "	Sorry, Database ($dbName) doesn't exist, please try again	"
+     echo " =================================================================== "
+     Delete_Record
+  fi
+}
+
+
+#Eighth Function: Drop specific Table in specific DataBase
+Drop_Table()
+{
+  echo "Please enter existing DataBase name: "
+  read dbName
+  if [ -d $dbName ]
+  then
+     loop=1
+     while [ $loop -eq 1 ]
+     do    
+       echo "List of tables in this DataBase ($dbName): "
+       ls $dbName
+       echo " ========================================= "
+       echo "Please enter existing Table Name: "
+       read tableName
+       if [ -f $dbName/$tableName ]
+       then
+           rm $dbName/$tableName
+           echo "	Table ($tableName) Dropped Sucessfully from DataBase ($dbName)	"
+           echo " ===================================================================== "          
+           
+           echo "Do you want to drop another Table from same DataBase ($dbName)? (y/n)"
+           read ch
+           if [ $ch = 'y' ]
+           then
+               loop=1
+               echo " =================================================================== "
+           elif [ $ch = 'n' ]
+           then  
+              loop=0
+              echo " ===================================================================== "          
+           else
+              echo "	Sorry you entered wrong input, please enter (y/n)	"
+              echo "Note:: This is your last try"
+              echo "Do you want to drop another Table from same DataBase ($dbName)? (y/n)"
+              read ch
+              if [ $ch = 'y' ]
+              then
+                 loop=1
+                 echo " =================================================================== "
+              else  
+                 loop=0
+                 echo " ===================================================================== "          
+              fi
+           fi
+        else
+            echo "	Sorry, Table ($tableName) already doesn't exist in DataBase ($dbName), please try again	"
+            echo " ============================================================================================ "
+            Drop_Table
+        fi
+   done
+  else
+      echo "	Sorry, Database ($dbName) doesn't exist, please try again	"
+      echo " ================================================================== "
+      Drop_Table
+  fi
+}
+
+
+#Ninth Function: Drop specific DataBase
+Drop_DB()
+{
+ loop=1
+ while [ $loop -eq 1 ]
+ do
+   echo "Please enter existing DataBase name: "
+   read dbName
+   if [ -d $dbName ]
+   then 
+       rm -rf  $dbName
+       echo "	DataBase ($dbName) Dropped Sucessfully	"
+       echo " ========================================== "
+      
+       echo "Do you want to delete another DataBase? (y/n)"
+       read ch
+       if [ $ch = 'y' ]
+       then
+           loop=1
+           echo " =========================================== "
+       elif [ $ch = 'n' ] 
+       then
+           loop=0
+           echo " ========================================== "
+       else
+          echo "	Sorry you entered wrong input, please enter (y/n)	"
+          echo "Note:: This is your last try"
+          echo "Do you want to create new DataBase? (y/n)"
+          read ch
+          if [ $ch = 'y' ]
+          then
+              loop=1
+              echo " =========================================== "
+          else
+              loop=0
+              echo " ========================================== "
+          fi
+       fi
+  else
+     echo "	Sorry, Database ($dbName) already doesn't exist, please try again	"
+     echo " =========================================================================== "
+     Drop_DB
+  fi
+done
+}
+
+
+while [ true ]
+do
+echo "               ---------- ^_^ Welcome to Our DBMS Program ^_^ ----------	"
+echo "               |                                                         |"
+echo "                              1.  Create  DataBase(s)			"
+echo "               |                                                         |"
+echo "                              2.  Create  Table(s)	 		"
+echo "               |                                                         |"
+echo "                              3.  Insert  Record(s)		 	"
+echo "               |                                                         |"
+echo "                              4.  Update  Record(s)		 	"
+echo "               |                                                         |"
+echo "                              5.  Select  Table/Column/Record 		"
+echo "               |                                                         |"
+echo "                              6.  Display Table(s)     Data		"
+echo "               |                                                         |"
+echo "                              7.  Delete  Record(s)	 		"
+echo "               |                                                         |"
+echo "                              8.  Drop    Table(s)		 	"
+echo "               |                                                         |"
+echo "                              9.  Drop    DataBase(s)			"
+echo "               |                                                         |"
+echo "                              10. Exit 					"
+echo "               ========================================================== "
+echo "          Please enter your choice number:                		"
+echo -e '\u2620'
+read ch
+
+case $ch in
+            1) 
+               clear
+               Create_DB
+               ;;
+            2) 
+               clear
+               Create_Table
+               ;;
+            3) 
+               clear
+               Insert
+               ;;
+            4) 
+               clear
+               Update
+               ;;
+            5) 
+               clear
+               Select
+               ;;
+            6) 
+               clear
+               Display_Table
+               ;;
+            7) 
+               clear
+               Delete_Record
+               ;;
+            8) 
+               clear
+               Drop_Table
+               ;;
+            9) 
+               clear
+               Drop_DB
+               ;;
+            10)
+               clear
+               break
+               ;;
+            *)
+              clear 
+              echo "   Sorry you entered wrong choice, please try again :)     "
+              ;;
+esac
+done
